@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>QUIZ ONLINE - BENSAÚDE</title>
+  <style>
+    * { 
+      box-sizing: border-box; 
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+      text-transform: uppercase; /* Força todo o texto em caixa alta */
+    }
+    
+    body { 
+      background-color: #004F9A; 
+      color: #333; 
+      display: flex; 
+      flex-direction: column; 
+      align-items: center; 
+      margin: 0; 
+      padding: 120px 20px 40px 20px; /* Padding superior para não cobrir o conteúdo com a logo fixa */
+    }
+
+    /* Topo Fixo com a Logo */
+    .header-fixed {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      background-color: #ffffff;
+      padding: 15px 20px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+      z-index: 1000;
+    }
+
+    .header-fixed img {
+      max-height: 55px;
+      width: auto;
+    }
+
+    /* Container Principal */
+    .quiz-container { 
+      background: #ffffff; 
+      padding: 30px; 
+      border-radius: 12px; 
+      max-width: 750px; 
+      width: 100%; 
+      box-shadow: 0 8px 20px rgba(0,0,0,0.2); 
+      border-top: 6px solid #44C8F5;
+    }
+
+    .header-bar { 
+      display: flex; 
+      justify-content: space-between; 
+      align-items: center; 
+      border-bottom: 2px solid #44C8F5; 
+      padding-bottom: 15px; 
+      margin-bottom: 20px; 
+    }
+
+    h1 { 
+      margin: 0; 
+      color: #004F9A; 
+      font-size: 22px; 
+      font-weight: 800;
+    }
+
+    .btn-admin { 
+      background: #44C8F5; 
+      color: #004F9A; 
+      border: none; 
+      padding: 8px 15px; 
+      border-radius: 6px; 
+      cursor: pointer; 
+      font-size: 12px; 
+      font-weight: bold;
+      transition: background 0.2s;
+    }
+
+    .btn-admin:hover { 
+      background: #33b0dc; 
+    }
+    
+    .step { display: none; }
+    .step.active { display: block; }
+    
+    label { 
+      font-weight: bold; 
+      display: block; 
+      margin-top: 15px; 
+      color: #004F9A;
+    }
+
+    input[type="text"], input[type="number"], input[type="password"] { 
+      width: 100%; 
+      padding: 12px; 
+      margin-top: 5px; 
+      border: 2px solid #ccc; 
+      border-radius: 6px; 
+      font-size: 14px;
+    }
+
+    input[type="text"]:focus, input[type="number"]:focus, input[type="password"]:focus {
+      border-color: #44C8F5;
+      outline: none;
+    }
+    
+    .question { 
+      margin-bottom: 25px; 
+      background: #f4f9fc; 
+      padding: 18px; 
+      border-radius: 8px; 
+      border-left: 6px solid #004F9A; 
+    }
+
+    .question p { 
+      font-weight: bold; 
+      margin-bottom: 12px; 
+      color: #004F9A;
+    }
+
+    .option { 
+      margin: 10px 0; 
+      display: flex; 
+      align-items: center; 
+      cursor: pointer; 
+      background: #ffffff;
+      padding: 10px 14px;
+      border: 1px solid #e0e0e0;
+      border-radius: 6px;
+      transition: border 0.2s;
+    }
+
+    .option:hover {
+      border-color: #44C8F5;
+    }
+
+    .option input { 
+      margin-right: 12px; 
+      accent-color: #004F9A;
+    }
+    
+    button.btn-primary { 
+      background: #004F9A; 
+      color: #ffffff; 
+      border: none; 
+      padding: 14px 20px; 
+      font-size: 16px; 
+      font-weight: bold;
+      border-radius: 6px; 
+      cursor: pointer; 
+      width: 100%; 
+      margin-top: 20px; 
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+      transition: background 0.2s;
+    }
+
+    button.btn-primary:hover { 
+      background: #00386e; 
+    }
+
+    .error { 
+      color: #d9534f; 
+      font-weight: bold;
+      margin-top: 10px; 
+      display: none; 
+    }
+
+    /* Estilos do Painel Admin */
+    .admin-card { 
+      background: #f8f9fa; 
+      border: 1px solid #004F9A; 
+      border-radius: 6px; 
+      padding: 15px; 
+      margin-bottom: 20px; 
+      position: relative; 
+    }
+
+    .admin-option-row { 
+      display: flex; 
+      gap: 10px; 
+      align-items: center; 
+      margin-top: 8px; 
+    }
+
+    .admin-option-row input[type="text"] { flex: 3; margin: 0; }
+    .admin-option-row input[type="number"] { flex: 1; margin: 0; }
+
+    .btn-delete-q { 
+      background: #dc3545; 
+      color: white; 
+      border: none; 
+      padding: 6px 12px; 
+      border-radius: 4px; 
+      cursor: pointer; 
+      float: right; 
+      font-weight: bold;
+    }
+
+    .btn-add-q { 
+      background: #44C8F5; 
+      color: #004F9A; 
+      border: none; 
+      padding: 10px 15px; 
+      border-radius: 6px; 
+      cursor: pointer; 
+      margin-bottom: 15px; 
+      font-weight: bold;
+    }
+
+    .btn-save-config { 
+      background: #004F9A; 
+      color: white; 
+      border: none; 
+      padding: 14px; 
+      border-radius: 6px; 
+      cursor: pointer; 
+      width: 100%; 
+      font-size: 16px; 
+      font-weight: bold; 
+    }
+  </style>
+</head>
+<body>
+
+<!-- HEADER FIXO COM LOGO -->
+<div class="header-fixed">
+  <img src="LOGO_BENSAUDE.png" alt="BENSAÚDE - HOSPITAL BENEFICÊNCIA PORTUGUESA">
+</div>
+
+<div class="quiz-container">
+  <div class="header-bar">
+    <h1>QUIZ DE CONHECIMENTOS</h1>
+    <button class="btn-admin" onclick="solicitarSenhaAdmin()">⚙️ GERENCIAR PERGUNTAS</button>
+  </div>
+
+  <!-- ETAPA 1: Identificação pelo CPF -->
+  <div id="step-cpf" class="step active">
+    <p>PARA INICIAR O QUIZ, DIGITE SEU CPF. CADA CPF SÓ PODERÁ PARTICIPAR UMA ÚNICA VEZ.</p>
+    <label for="cpf">CPF (SOMENTE NÚMEROS):</label>
+    <input type="text" id="cpf" placeholder="000.000.000-00" maxlength="14">
+    <div id="cpf-error" class="error"></div>
+    <button class="btn-primary" onclick="iniciarQuiz()">INICIAR QUIZ</button>
+  </div>
+
+  <!-- ETAPA 2: Perguntas do Quiz -->
+  <div id="step-quiz" class="step">
+    <form id="quiz-form">
+      <div id="questions-container"></div>
+      <button type="button" class="btn-primary" onclick="finalizarQuiz()">ENVIAR RESPOSTAS</button>
+    </form>
+  </div>
+
+  <!-- ETAPA 3: Resultado / Conclusão -->
+  <div id="step-result" class="step">
+    <h2>OBRIGADO POR PARTICIPAR!</h2>
+    <p>SUA PONTUAÇÃO FOI REGISTRADA COM SUCESSO.</p>
+    <h3 id="score-display" style="color: #004F9A;"></h3>
+    <button class="btn-primary" onclick="location.reload()">VOLTAR AO INÍCIO</button>
+  </div>
+
+  <!-- ETAPA ADMIN: Editor de Perguntas -->
+  <div id="step-admin" class="step">
+    <h2>GERENCIADOR DE PERGUNTAS E RESPOSTAS</h2>
+    <p>EDITE OS TEXTOS DAS PERGUNTAS, DAS ALTERNATIVAS E ATRIBUA O PESO CORRESPONDENTE A CADA UMA.</p>
+    
+    <button class="btn-add-q" onclick="adicionarPerguntaUI()">+ ADICIONAR NOVA PERGUNTA</button>
+    
+    <div id="admin-questions-list"></div>
+
+    <button class="btn-save-config" onclick="salvarConfiguracoes()">💾 SALVAR ALTERAÇÕES</button>
+    <button class="btn-admin" style="width: 100%; margin-top: 10px; background: #ccc; color: #333;" onclick="cancelarConfiguracoes()">VOLTAR SEM SALVAR</button>
+  </div>
+</div>
+
+<script>
+  const SENHA_ADMIN = "Bensaude4477";
+
+  // Perguntas padrão
+  const perguntasPadrao = [
+    {
+      enunciado: "1. COMO VOCÊ AVALIA O USO DE BOAS PRÁTICAS NA ROTINA?",
+      opcoes: [
+        { texto: "SEMPRE APLICO E COMPARTILHO COM O TIME", peso: 10 },
+        { texto: "APLICO NA MAIORIA DAS VEZES", peso: 7 },
+        { texto: "RARAMENTE APLICO", peso: 3 },
+        { texto: "NÃO COSTUMO APLICAR", peso: 0 }
+      ]
+    },
+    {
+      enunciado: "2. QUAL A SUA FREQUÊNCIA DE ATUALIZAÇÃO PROFISSIONAL?",
+      opcoes: [
+        { texto: "SEMANALMENTE LEIO ARTIGOS E FAÇO CURSOS", peso: 10 },
+        { texto: "MENSALMENTE BUSCO NOVIDADES", peso: 7 },
+        { texto: "APENAS QUANDO NECESSÁRIO", peso: 4 },
+        { texto: "NUNCA ME ATUALIZO", peso: 0 }
+      ]
+    }
+  ];
+
+  let cpfAtual = "";
+
+  function obterPerguntas() {
+    const salvas = localStorage.getItem('quiz_perguntas_config');
+    return salvas ? JSON.parse(salvas) : perguntasPadrao;
+  }
+
+  function validarCPF(cpf) {
+    cpf = cpf.replace(/[^\d]+/g, '');
+    if (cpf.length !== 11 || /^(\d)\1+$/.test(cpf)) return false;
+    let soma = 0, resto;
+    for (let i = 1; i <= 9; i++) soma += parseInt(cpf.substring(i-1, i)) * (11 - i);
+    resto = (soma * 10) % 11;
+    if (resto === 10 || resto === 11) resto = 0;
+    if (resto !== parseInt(cpf.substring(9, 10))) return false;
+    soma = 0;
+    for (let i = 1; i <= 10; i++) soma += parseInt(cpf.substring(i-1, i)) * (12 - i);
+    resto = (soma * 10) % 11;
+    if (resto === 10 || resto === 11) resto = 0;
+    if (resto !== parseInt(cpf.substring(10, 11))) return false;
+    return true;
+  }
+
+  function shuffle(array) {
+    let m = array.length, t, i;
+    while (m) {
+      i = Math.floor(Math.random() * m--);
+      t = array[m];
+      array[m] = array[i];
+      array[i] = t;
+    }
+    return array;
+  }
+
+  function iniciarQuiz() {
+    const cpfInput = document.getElementById('cpf').value;
+    const errorDiv = document.getElementById('cpf-error');
+    errorDiv.style.display = 'none';
+
+    if (!validarCPF(cpfInput)) {
+      errorDiv.innerText = "POR FAVOR, INFORME UM CPF VÁLIDO.";
+      errorDiv.style.display = 'block';
+      return;
+    }
+
+    const cpfLimpo = cpfInput.replace(/[^\d]+/g, '');
+    const participacoes = JSON.parse(localStorage.getItem('quiz_participacoes') || '{}');
+
+    if (participacoes[cpfLimpo]) {
+      errorDiv.innerText = "ESTE CPF JÁ PARTICIPOU DO QUIZ ANTERIORMENTE!";
+      errorDiv.style.display = 'block';
+      return;
+    }
+
+    cpfAtual = cpfLimpo;
+    renderizarPerguntas();
+    
+    document.getElementById('step-cpf').classList.remove('active');
+    document.getElementById('step-quiz').classList.add('active');
+  }
+
+  function renderizarPerguntas() {
+    const container = document.getElementById('questions-container');
+    container.innerHTML = "";
+    const perguntas = obterPerguntas();
+
+    perguntas.forEach((p, index) => {
+      const opcoesEmbaralhadas = shuffle([...p.opcoes]);
+
+      let qHtml = `<div class="question"><p>${p.enunciado}</p>`;
+      opcoesEmbaralhadas.forEach((op) => {
+        qHtml += `
+          <label class="option">
+            <input type="radio" name="q${index}" value="${op.peso}" required>
+            ${op.texto}
+          </label>`;
+      });
+      qHtml += `</div>`;
+      container.innerHTML += qHtml;
+    });
+  }
+
+  function finalizarQuiz() {
+    const form = document.getElementById('quiz-form');
+    if (!form.checkValidity()) {
+      alert("POR FAVOR, RESPONDA A TODAS AS PERGUNTAS.");
+      return;
+    }
+
+    let pontuacaoTotal = 0;
+    const formData = new FormData(form);
+    for (let pair of formData.entries()) {
+      pontuacaoTotal += parseInt(pair[1]);
+    }
+
+    const participacoes = JSON.parse(localStorage.getItem('quiz_participacoes') || '{}');
+    participacoes[cpfAtual] = {
+      pontuacao: pontuacaoTotal,
+      data: new Date().toISOString()
+    };
+    localStorage.setItem('quiz_participacoes', JSON.stringify(participacoes));
+
+    document.getElementById('score-display').innerText = `SUA PONTUAÇÃO FINAL FOI: ${pontuacaoTotal} PONTOS!`;
+    document.getElementById('step-quiz').classList.remove('active');
+    document.getElementById('step-result').classList.add('active');
+  }
+
+  /* GERENCIADOR ADMIN */
+  function solicitarSenhaAdmin() {
+    const senhaDigitada = prompt("DIGITE A SENHA DE ADMINISTRADOR:");
+    
+    if (senhaDigitada === null) return;
+    
+    if (senhaDigitada === SENHA_ADMIN) {
+      abrirConfiguracoes();
+    } else {
+      alert("SENHA INCORRETA! ACESSO NEGADO.");
+    }
+  }
+
+  function abrirConfiguracoes() {
+    document.querySelectorAll('.step').forEach(el => el.classList.remove('active'));
+    document.getElementById('step-admin').classList.add('active');
+    
+    const container = document.getElementById('admin-questions-list');
+    container.innerHTML = "";
+    const perguntas = obterPerguntas();
+
+    perguntas.forEach((p) => {
+      adicionarPerguntaUI(p.enunciado, p.opcoes);
+    });
+  }
+
+  function adicionarPerguntaUI(enunciado = "", opcoes = null) {
+    const container = document.getElementById('admin-questions-list');
+    const qIndex = container.children.length;
+
+    if (!opcoes) {
+      opcoes = [
+        { texto: "", peso: 10 },
+        { texto: "", peso: 5 },
+        { texto: "", peso: 2 },
+        { texto: "", peso: 0 }
+      ];
+    }
+
+    let htmlOptions = "";
+    opcoes.forEach((op) => {
+      htmlOptions += `
+        <div class="admin-option-row">
+          <input type="text" class="opt-text" placeholder="TEXTO DA ALTERNATIVA" value="${op.texto}">
+          <input type="number" class="opt-weight" placeholder="PESO" value="${op.peso}" title="PESO/PONTUAÇÃO">
+        </div>`;
+    });
+
+    const card = document.createElement('div');
+    card.className = 'admin-card';
+    card.innerHTML = `
+      <button class="btn-delete-q" onclick="this.parentElement.remove()">EXCLUIR PERGUNTA</button>
+      <label>PERGUNTA ${qIndex + 1}:</label>
+      <input type="text" class="q-enunciado" value="${enunciado}" placeholder="DIGITE O ENUNCIADO DA PERGUNTA">
+      <label>ALTERNATIVAS E PESOS (PONTUAÇÃO):</label>
+      <div class="options-group">${htmlOptions}</div>
+    `;
+
+    container.appendChild(card);
+  }
+
+  function salvarConfiguracoes() {
+    const cards = document.querySelectorAll('.admin-card');
+    const novasPerguntas = [];
+
+    cards.forEach(card => {
+      const enunciado = card.querySelector('.q-enunciado').value;
+      const optionRows = card.querySelectorAll('.admin-option-row');
+      const opcoes = [];
+
+      optionRows.forEach(row => {
+        const texto = row.querySelector('.opt-text').value;
+        const peso = parseInt(row.querySelector('.opt-weight').value) || 0;
+        if (texto.trim() !== "") {
+          opcoes.push({ texto, peso });
+        }
+      });
+
+      if (enunciado.trim() !== "" && opcoes.length > 0) {
+        novasPerguntas.push({ enunciado, opcoes });
+      }
+    });
+
+    if (novasPerguntas.length === 0) {
+      alert("ADICIONE PELO MENOS UMA PERGUNTA VÁLIDA!");
+      return;
+    }
+
+    localStorage.setItem('quiz_perguntas_config', JSON.stringify(novasPerguntas));
+    alert("PERGUNTAS SALVAS COM SUCESSO!");
+    cancelarConfiguracoes();
+  }
+
+  function cancelarConfiguracoes() {
+    document.querySelectorAll('.step').forEach(el => el.classList.remove('active'));
+    document.getElementById('step-cpf').classList.add('active');
+  }
+</script>
+
+</body>
+</html>
