@@ -77,7 +77,7 @@
     
     label { font-weight: bold; display: block; margin-top: 15px; color: #004F9A; }
 
-    input[type="text"], input[type="number"], input[type="password"] { 
+    input[type="text"], input[type="password"] { 
       width: 100%; 
       padding: 12px; 
       margin-top: 5px; 
@@ -86,7 +86,7 @@
       font-size: 14px;
     }
 
-    input[type="text"]:focus, input[type="number"]:focus, input[type="password"]:focus {
+    input[type="text"]:focus, input[type="password"]:focus {
       border-color: #44C8F5;
       outline: none;
     }
@@ -131,11 +131,11 @@
 
     .error { color: #d9534f; font-weight: bold; margin-top: 10px; display: none; }
 
-    /* Admin Styles */
+    /* Estilos do Painel Administrativo */
     .admin-card { background: #f8f9fa; border: 1px solid #004F9A; border-radius: 6px; padding: 15px; margin-bottom: 20px; }
     .admin-option-row { display: flex; gap: 10px; align-items: center; margin-top: 8px; }
-    .admin-option-row input[type="text"] { flex: 3; margin: 0; }
-    .admin-option-row input[type="number"] { flex: 1; margin: 0; }
+    .admin-option-row input[type="text"] { flex: 1; margin: 0; }
+    .admin-option-row label { margin: 0; font-size: 11px; display: flex; align-items: center; gap: 4px; cursor: pointer; color: #28a745; }
     .btn-delete-q { background: #dc3545; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; float: right; font-weight: bold; }
     .btn-add-q { background: #44C8F5; color: #004F9A; border: none; padding: 10px 15px; border-radius: 6px; cursor: pointer; margin-bottom: 15px; font-weight: bold; }
     .btn-save-config { background: #004F9A; color: white; border: none; padding: 14px; border-radius: 6px; cursor: pointer; width: 100%; font-size: 16px; font-weight: bold; }
@@ -186,6 +186,7 @@
   <!-- ETAPA ADMIN -->
   <div id="step-admin" class="step">
     <h2>GERENCIADOR DE PERGUNTAS E RESPOSTAS</h2>
+    <p style="font-size: 12px; color: #666;">MARQUE O BOTÃO VERDE AO LADO DA ALTERNATIVA QUE FOR A CORRETA.</p>
     <button class="btn-add-q" onclick="adicionarPerguntaUI()">+ ADICIONAR NOVA PERGUNTA</button>
     <div id="admin-questions-list"></div>
     <button class="btn-save-config" onclick="salvarConfiguracoes()">💾 SALVAR ALTERAÇÕES</button>
@@ -194,18 +195,18 @@
 </div>
 
 <script>
-  // INSIRA AQUI A URL DO SEU GOOGLE APPS SCRIPT
-  const URL_GOOGLE_SCRIPT = "https://script.google.com/macros/s/AKfycbyh691FMwBxF720lndEn_Gh98k-zS8YKH8MV9PZIsWNR66jTGzAFMDXAYH_yhwywLJUaw/exec";
+  const URL_GOOGLE_SCRIPT = "https://script.google.com/macros/s/AKfycbz-GoWS1Z3cC4tv7v2U1eoFYeq3kqcOAwGBQ14MJbz7RgGSUuGiIhPl0EL64U6xgCraJQ/exec";
   const SENHA_ADMIN = "Bensaude4477";
 
   const perguntasPadrao = [
     {
-      enunciado: "1. COMO VOCÊ AVALIA O USO DE BOAS PRÁTICAS NA ROTINA?",
+      enunciado: "1. QUAL É O FOCO PRINCIPAL DAS BOAS PRÁTICAS DE ATENDIMENTO?",
+      correta: 0,
       opcoes: [
-        { texto: "SEMPRE APLICO E COMPARTILHO COM O TIME", peso: 10 },
-        { texto: "APLICO NA MAIORIA DAS VEZES", peso: 7 },
-        { texto: "RARAMENTE APLICO", peso: 3 },
-        { texto: "NÃO COSTUMO APLICAR", peso: 0 }
+        "GARANTIR A SEGURANÇA E SATISFAÇÃO DO PACIENTE",
+        "PREENCHER FORMULÁRIOS RAPIDAMENTE",
+        "REDUZIR O TEMPO DE CONVERSA COM O PACIENTE",
+        "EVITAR O USO DE EQUIPAMENTOS DE PROTEÇÃO"
       ]
     }
   ];
@@ -286,13 +287,19 @@
     const perguntas = obterPerguntas();
 
     perguntas.forEach((p, index) => {
-      const opcoesEmbaralhadas = shuffle([...p.opcoes]);
+      // Mapeia as opções mantendo a informação de qual é a correta
+      const opcoesObjetos = p.opcoes.map((texto, i) => ({
+        texto: texto,
+        pontos: (i === p.correta) ? 10 : 0
+      }));
+
+      const opcoesEmbaralhadas = shuffle([...opcoesObjetos]);
 
       let qHtml = `<div class="question"><p>${p.enunciado}</p>`;
       opcoesEmbaralhadas.forEach((op) => {
         qHtml += `
           <label class="option">
-            <input type="radio" name="q${index}" value="${op.peso}" required>
+            <input type="radio" name="q${index}" value="${op.pontos}" required>
             ${op.texto}
           </label>`;
       });
@@ -318,9 +325,8 @@
       pontuacaoTotal += parseInt(pair[1]);
     }
 
-    // Envio do NOME, CPF e PONTUAÇÃO para o Google Sheets
     try {
-      if (URL_GOOGLE_SCRIPT && !URL_GOOGLE_SCRIPT.includes("https://script.google.com/macros/s/AKfycbyh691FMwBxF720lndEn_Gh98k-zS8YKH8MV9PZIsWNR66jTGzAFMDXAYH_yhwywLJUaw/exec")) {
+      if (URL_GOOGLE_SCRIPT && !URL_GOOGLE_SCRIPT.includes("https://script.google.com/macros/s/AKfycbz-GoWS1Z3cC4tv7v2U1eoFYeq3kqcOAwGBQ14MJbz7RgGSUuGiIhPl0EL64U6xgCraJQ/exec")) {
         await fetch(URL_GOOGLE_SCRIPT, {
           method: 'POST',
           mode: 'no-cors',
@@ -336,7 +342,6 @@
       console.error("Erro ao enviar dados para a planilha:", e);
     }
 
-    // Trava de participação local
     const participacoes = JSON.parse(localStorage.getItem('quiz_participacoes') || '{}');
     participacoes[cpfAtual] = { nome: nomeAtual, pontuacao: pontuacaoTotal, data: new Date().toISOString() };
     localStorage.setItem('quiz_participacoes', JSON.stringify(participacoes));
@@ -357,33 +362,36 @@
     document.getElementById('step-admin').classList.add('active');
     const container = document.getElementById('admin-questions-list');
     container.innerHTML = "";
-    obterPerguntas().forEach(p => adicionarPerguntaUI(p.enunciado, p.opcoes));
+    obterPerguntas().forEach(p => adicionarPerguntaUI(p.enunciado, p.opcoes, p.correta));
   }
 
-  function adicionarPerguntaUI(enunciado = "", opcoes = null) {
+  function adicionarPerguntaUI(enunciado = "", opcoes = null, corretaIdx = 0) {
     const container = document.getElementById('admin-questions-list');
     const qIndex = container.children.length;
     if (!opcoes) {
-      opcoes = [
-        { texto: "", peso: 10 }, { texto: "", peso: 5 },
-        { texto: "", peso: 2 }, { texto: "", peso: 0 }
-      ];
+      opcoes = ["", "", "", ""];
     }
+    
     let htmlOptions = "";
-    opcoes.forEach(op => {
+    opcoes.forEach((opTexto, i) => {
+      const isChecked = (i === corretaIdx) ? "checked" : "";
       htmlOptions += `
         <div class="admin-option-row">
-          <input type="text" class="opt-text" placeholder="TEXTO DA ALTERNATIVA" value="${op.texto}">
-          <input type="number" class="opt-weight" placeholder="PESO" value="${op.peso}">
+          <input type="text" class="opt-text" placeholder="TEXTO DA ALTERNATIVA" value="${opTexto}">
+          <label>
+            <input type="radio" name="correct_q${qIndex}" class="opt-correct" value="${i}" ${isChecked}>
+            CORRETA
+          </label>
         </div>`;
     });
+
     const card = document.createElement('div');
     card.className = 'admin-card';
     card.innerHTML = `
       <button class="btn-delete-q" onclick="this.parentElement.remove()">EXCLUIR PERGUNTA</button>
       <label>PERGUNTA ${qIndex + 1}:</label>
       <input type="text" class="q-enunciado" value="${enunciado}" placeholder="DIGITE O ENUNCIADO">
-      <label>ALTERNATIVAS E PESOS:</label>
+      <label>ALTERNATIVAS (SELEÇIONE A CORRETA):</label>
       <div class="options-group">${htmlOptions}</div>`;
     container.appendChild(card);
   }
@@ -391,20 +399,38 @@
   function salvarConfiguracoes() {
     const cards = document.querySelectorAll('.admin-card');
     const novasPerguntas = [];
-    cards.forEach(card => {
+
+    cards.forEach((card) => {
       const enunciado = card.querySelector('.q-enunciado').value;
       const optionRows = card.querySelectorAll('.admin-option-row');
       const opcoes = [];
-      optionRows.forEach(row => {
+      let corretaIdx = 0;
+
+      optionRows.forEach((row, i) => {
         const texto = row.querySelector('.opt-text').value;
-        const peso = parseInt(row.querySelector('.opt-weight').value) || 0;
-        if (texto.trim() !== "") opcoes.push({ texto, peso });
+        const isCorrect = row.querySelector('.opt-correct').checked;
+        if (texto.trim() !== "") {
+          opcoes.push(texto);
+          if (isCorrect) corretaIdx = opcoes.length - 1;
+        }
       });
-      if (enunciado.trim() !== "" && opcoes.length > 0) novasPerguntas.push({ enunciado, opcoes });
+
+      if (enunciado.trim() !== "" && opcoes.length > 0) {
+        novasPerguntas.push({
+          enunciado: enunciado,
+          opcoes: opcoes,
+          correta: corretaIdx
+        });
+      }
     });
-    if (novasPerguntas.length === 0) { alert("ADICIONE PELO MENOS UMA PERGUNTA VÁLIDA!"); return; }
+
+    if (novasPerguntas.length === 0) { 
+      alert("ADICIONE PELO MENOS UMA PERGUNTA VÁLIDA!"); 
+      return; 
+    }
+
     localStorage.setItem('quiz_perguntas_config', JSON.stringify(novasPerguntas));
-    alert("PERGUNTAS SALVAS!");
+    alert("PERGUNTAS SALVAS COM SUCESSO!");
     cancelarConfiguracoes();
   }
 
