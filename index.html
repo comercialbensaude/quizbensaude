@@ -219,7 +219,8 @@
 </div>
 
 <script>
-  const URL_GOOGLE_SCRIPT = "https://script.google.com/macros/s/AKfycbyttS3geMJBEC4xxBZP5lySur48rc3vdnE1p5Mdyvs5vVfllYAd2bnw8zAcNDjk1A7_VQ/exec";
+  // COLE SUA URL DO GOOGLE APPS SCRIPT ABAIXO
+  const URL_GOOGLE_SCRIPT = "https://script.google.com/macros/s/AKfycbzc_6TXTKGODefrJ2jW4pkO8Mi5vcc9H1QqAPzuK_qh25ASBsPXkqkce6Na1lHcUVtS-w/exec";
   const SENHA_ADMIN = "Bensaude4477";
 
   const perguntasPadrao = [
@@ -381,18 +382,21 @@
     btnSubmit.disabled = true;
     btnSubmit.innerText = "ENVIANDO RESPOSTAS...";
 
-    // Envio dos dados para o Google Sheets via API
+    // Envio dos dados para o Google Sheets via API (Metódo de codificação seguro contra CORS)
     try {
-      if (URL_GOOGLE_SCRIPT && !URL_GOOGLE_SCRIPT.includes("https://script.google.com/macros/s/AKfycbyttS3geMJBEC4xxBZP5lySur48rc3vdnE1p5Mdyvs5vVfllYAd2bnw8zAcNDjk1A7_VQ/exec")) {
+      if (URL_GOOGLE_SCRIPT && !URL_GOOGLE_SCRIPT.includes("https://script.google.com/macros/s/AKfycbzc_6TXTKGODefrJ2jW4pkO8Mi5vcc9H1QqAPzuK_qh25ASBsPXkqkce6Na1lHcUVtS-w/exec")) {
+        const payload = new URLSearchParams();
+        payload.append("payload", JSON.stringify({
+          nome: nomeAtual,
+          cpf: cpfAtual,
+          pontuacao: pontuacaoTotal
+        }));
+
         await fetch(URL_GOOGLE_SCRIPT, {
           method: 'POST',
           mode: 'no-cors',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            nome: nomeAtual,
-            cpf: cpfAtual,
-            pontuacao: pontuacaoTotal
-          })
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: payload.toString()
         });
       }
     } catch (e) {
@@ -404,7 +408,7 @@
     participacoes[cpfAtual] = { nome: nomeAtual, pontuacao: pontuacaoTotal, data: new Date().toISOString() };
     localStorage.setItem('quiz_participacoes', JSON.stringify(participacoes));
 
-    // Exibe o resultado final após 1.5 segundos para visualização do feedback
+    // Exibe o resultado final após 1.5 segundos para leitura do feedback
     setTimeout(() => {
       document.getElementById('score-display').innerText = `${nomeAtual}, SUA PONTUAÇÃO TOTAL FOI: ${pontuacaoTotal} PONTOS!`;
       document.getElementById('step-quiz').classList.remove('active');
