@@ -131,6 +131,28 @@
 
     .error { color: #d9534f; font-weight: bold; margin-top: 10px; display: none; }
 
+    /* Feedback de Resposta e Resultado detalhado */
+    .feedback-box {
+      margin-top: 10px;
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-weight: bold;
+      font-size: 13px;
+    }
+    .feedback-correct { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+    .feedback-wrong { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+
+    .summary-card {
+      background: #f8f9fa;
+      border-left: 4px solid #004F9A;
+      padding: 12px 15px;
+      margin-bottom: 12px;
+      border-radius: 6px;
+      text-align: left;
+    }
+    .summary-card.correct { border-left-color: #28a745; }
+    .summary-card.wrong { border-left-color: #dc3545; }
+
     /* Estilos do Painel Administrativo */
     .admin-card { background: #f8f9fa; border: 1px solid #004F9A; border-radius: 6px; padding: 15px; margin-bottom: 20px; }
     .admin-option-row { display: flex; gap: 10px; align-items: center; margin-top: 8px; }
@@ -177,9 +199,11 @@
 
   <!-- ETAPA 3: RESULTADO -->
   <div id="step-result" class="step">
-    <h2>OBRIGADO POR PARTICIPAR!</h2>
-    <p>SUA PONTUAÇÃO FOI REGISTRADA COM SUCESSO NA PLANILHA.</p>
+    <h2>RESULTADO DO QUIZ</h2>
     <h3 id="score-display" style="color: #004F9A;"></h3>
+    <hr style="border: 0; border-top: 1px solid #ccc; margin: 20px 0;">
+    <h4 style="color: #004F9A; text-align: left;">DETALHAMENTO POR QUESTÃO:</h4>
+    <div id="summary-container"></div>
     <button class="btn-primary" onclick="location.reload()">VOLTAR AO INÍCIO</button>
   </div>
 
@@ -195,7 +219,7 @@
 </div>
 
 <script>
-  const URL_GOOGLE_SCRIPT = "https://script.google.com/macros/s/AKfycbz-GoWS1Z3cC4tv7v2U1eoFYeq3kqcOAwGBQ14MJbz7RgGSUuGiIhPl0EL64U6xgCraJQ/exec";
+  const URL_GOOGLE_SCRIPT = "https://script.google.com/macros/s/AKfycbzjW5rqhIPsA33YYr5GQC6Fq81PcgB3-zeQlPcmztw9Qm3bxuN8rMnkfceFZuRWsYnsEA/exec";
   const SENHA_ADMIN = "Bensaude4477";
 
   const perguntasPadrao = [
@@ -213,6 +237,7 @@
 
   let cpfAtual = "";
   let nomeAtual = "";
+  let perguntasCarregadas = [];
 
   function obterPerguntas() {
     const salvas = localStorage.getItem('quiz_perguntas_config');
@@ -284,26 +309,28 @@
   function renderizarPerguntas() {
     const container = document.getElementById('questions-container');
     container.innerHTML = "";
-    const perguntas = obterPerguntas();
+    perguntasCarregadas = obterPerguntas();
 
-    perguntas.forEach((p, index) => {
-      // Mapeia as opções mantendo a informação de qual é a correta
+    perguntasCarregadas.forEach((p, index) => {
       const opcoesObjetos = p.opcoes.map((texto, i) => ({
         texto: texto,
-        pontos: (i === p.correta) ? 10 : 0
+        isCorreta: (i === p.correta)
       }));
 
       const opcoesEmbaralhadas = shuffle([...opcoesObjetos]);
 
-      let qHtml = `<div class="question"><p>${p.enunciado}</p>`;
+      let qHtml = `<div class="question" id="q-card-${index}">
+        <p>${p.enunciado}</p>`;
+        
       opcoesEmbaralhadas.forEach((op) => {
         qHtml += `
           <label class="option">
-            <input type="radio" name="q${index}" value="${op.pontos}" required>
+            <input type="radio" name="q${index}" value="${op.isCorreta ? '10' : '0'}" data-texto="${op.texto}" data-correta="${op.isCorreta}" required>
             ${op.texto}
           </label>`;
       });
-      qHtml += `</div>`;
+      
+      qHtml += `<div id="feedback-q${index}"></div></div>`;
       container.innerHTML += qHtml;
     });
   }
@@ -315,18 +342,48 @@
       return;
     }
 
+    let pontuacaoTotal = 0;
+    const summaryContainer = document.getElementById('summary-container');
+    summaryContainer.innerHTML = "";
+
+    // Processa o resultado de cada pergunta
+    perguntasCarregadas.forEach((p, index) => {
+      const selecionada = document.querySelector(`input[name="q${index}"]:checked`);
+      const isCorreta = selecionada.getAttribute('data-correta') === 'true';
+      const textoSelecionado = selecionada.getAttribute('data-texto');
+      const pontos = isCorreta ? 10 : 0;
+      pontuacaoTotal += pontos;
+
+      // Exibe sinalização na tela do quiz
+      const feedbackDiv = document.getElementById(`feedback-q${index}`);
+      if (isCorreta) {
+        feedbackDiv.className = "feedback-box feedback-correct";
+        feedbackDiv.innerText = "✔ RESPOSTA CORRETA (+10 PONTOS)";
+      } else {
+        feedbackDiv.className = "feedback-box feedback-wrong";
+        feedbackDiv.innerText = "✖ RESPOSTA ERRADA (0 PONTOS)";
+      }
+
+      // Monta o resumo detalhado para a página final
+      const cardResumo = document.createElement('div');
+      cardResumo.className = `summary-card ${isCorreta ? 'correct' : 'wrong'}`;
+      cardResumo.innerHTML = `
+        <strong>${p.enunciado}</strong><br>
+        <span style="font-size: 13px;">SUA RESPOSTA: ${textoSelecionado}</span><br>
+        <span style="font-size: 13px; font-weight: bold; color: ${isCorreta ? '#28a745' : '#dc3545'};">
+          ${isCorreta ? '✔ RESPOSTA CORRETA' : '✖ RESPOSTA ERRADA'} — PONTUAÇÃO: ${pontos} PONTOS
+        </span>
+      `;
+      summaryContainer.appendChild(cardResumo);
+    });
+
     const btnSubmit = document.getElementById('btn-submit');
     btnSubmit.disabled = true;
     btnSubmit.innerText = "ENVIANDO RESPOSTAS...";
 
-    let pontuacaoTotal = 0;
-    const formData = new FormData(form);
-    for (let pair of formData.entries()) {
-      pontuacaoTotal += parseInt(pair[1]);
-    }
-
+    // Envio dos dados para o Google Sheets via API
     try {
-      if (URL_GOOGLE_SCRIPT && !URL_GOOGLE_SCRIPT.includes("https://script.google.com/macros/s/AKfycbz-GoWS1Z3cC4tv7v2U1eoFYeq3kqcOAwGBQ14MJbz7RgGSUuGiIhPl0EL64U6xgCraJQ/exec")) {
+      if (URL_GOOGLE_SCRIPT && !URL_GOOGLE_SCRIPT.includes("https://script.google.com/macros/s/AKfycbzjW5rqhIPsA33YYr5GQC6Fq81PcgB3-zeQlPcmztw9Qm3bxuN8rMnkfceFZuRWsYnsEA/exec")) {
         await fetch(URL_GOOGLE_SCRIPT, {
           method: 'POST',
           mode: 'no-cors',
@@ -342,13 +399,17 @@
       console.error("Erro ao enviar dados para a planilha:", e);
     }
 
+    // Trava de participação local
     const participacoes = JSON.parse(localStorage.getItem('quiz_participacoes') || '{}');
     participacoes[cpfAtual] = { nome: nomeAtual, pontuacao: pontuacaoTotal, data: new Date().toISOString() };
     localStorage.setItem('quiz_participacoes', JSON.stringify(participacoes));
 
-    document.getElementById('score-display').innerText = `PARABÉNS ${nomeAtual}! SUA PONTUAÇÃO FINAL FOI: ${pontuacaoTotal} PONTOS!`;
-    document.getElementById('step-quiz').classList.remove('active');
-    document.getElementById('step-result').classList.add('active');
+    // Exibe o resultado final após 1.5 segundos para visualização do feedback
+    setTimeout(() => {
+      document.getElementById('score-display').innerText = `${nomeAtual}, SUA PONTUAÇÃO TOTAL FOI: ${pontuacaoTotal} PONTOS!`;
+      document.getElementById('step-quiz').classList.remove('active');
+      document.getElementById('step-result').classList.add('active');
+    }, 1500);
   }
 
   function solicitarSenhaAdmin() {
